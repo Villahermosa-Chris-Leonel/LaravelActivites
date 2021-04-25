@@ -2,63 +2,64 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Post;
 use Illuminate\Http\Request;
+use App\Models\Post;
 
 class PostController extends Controller
 {
-   public function index()
-   {
-       $posts = Post::latest()->paginate(5);
-       return view('posts.index',compact('posts'))
-       ->with('i',(request()->input('page',1) - 1) * 5); 
+    function addData(Request $req) {
+        $req->validate([
+            'Title' => 'required|max:100',
+            'Description' => 'required'
+        ]);
+        if($req->hasFile('img')){
+    
+            $filenameWithExt = $req->file('img')->getClientOriginalName();
+    
+            $filename = pathinfo($filenameWithExt, PATHINFO_FILENAME);
+            
+            $extension = $req->file('img')->getClientOriginalExtension();
+    
+            $filenameToStore = $filename.'_'.time().'.'.$extension;
+    
+            $path = $req->file('img')->storeAs('public/img', $filenameToStore);
+        } else{
+            $filenameToStore = '';
+        }
+        $post = new Post();
+        $post->fill($req->all());
+        $post->img = $filenameToStore;
+        $post->save();
+        return redirect('list');
+    }
+
+    function show(){
+        $data= Post::all();
+        return view('list', ['posts'=>$data]);
+    
+    }
+
+   public function delete($id){
+       $ob=Post::find($id);
+       $ob->delete();
+       return redirect('list');
    }
 
-   public function create()
-   {
-       return view('posts.create');
+   function edit($id){
+       $data=Post::find($id);
+       return view('edit', ['data'=>$data]);
+
    }
 
-   public function store(Request $request)
-   {
-       $request->validate([
-           'Title' => 'required',
-           'Description' => 'required',
-       ]);
+   function update(Request $req){
+       $data=Post::find($req->id);
+       $data->Title=$req->Title;
+       $data->Description=$req->Description;
+       $data->save();
+       return redirect('list');
+       
 
-       Post::create($request->all());
-
-       return redirect()->route('posts.index')
-       ->with('success','Posts created successfully.');
    }
-
-   public function show(Post$post)
-   {
-       return view('posts.show',compact('post'));
-   }
-
-   public function edit(Post$post)
-   {
-       return view ('posts.edit',compact('post'));
-   }
-
-   public function update(Request$request,Post$post)
-   {
-       $request->validate([
-
-       ]);
-
-       $post->update($request->all());
-
-       return redirect()->route('posts.index')
-       ->with('success','Post updated successfully');
-   }
-
-   public function destroy(Post$post)
-   {
-       $post->delete();
-
-       return redirect()->route('posts.index')
-       ->with('success','Post deleted successfully');
-   }
+   
+    
 }

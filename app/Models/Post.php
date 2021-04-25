@@ -9,7 +9,7 @@ class Post extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'Title','Description',
-    ];
+    protected $fillable = ['Title' , 'Description'];
+    public $timestamps = false;
+    
 }
